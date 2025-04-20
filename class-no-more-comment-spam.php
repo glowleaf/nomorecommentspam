@@ -171,13 +171,24 @@ class No_More_Comment_Spam {
     }
 
     public function field_nostr_relays() {
-        $relays = $this->opt('nostr_relays', [
+        $default_relays = [
             'wss://relay.damus.io',
             'wss://relay.primal.net',
             'wss://nostr.wine',
             'wss://nos.lol',
             'wss://relay.nostr.band'
-        ]);
+        ];
+        
+        // Get saved relays or use defaults if none are saved
+        $options = get_option(self::OPTION_KEY, []);
+        $relays = isset($options['nostr_relays']) && !empty($options['nostr_relays']) 
+            ? $options['nostr_relays'] 
+            : $default_relays;
+        
+        if (is_string($relays)) {
+            $relays = array_filter(explode("\n", $relays));
+        }
+        
         ?>
         <textarea name="<?php echo esc_attr(self::OPTION_KEY); ?>[nostr_relays]" 
                   rows="5" 
