@@ -30,13 +30,18 @@ class No_More_Comment_Spam {
         add_action('admin_menu', [$this, 'add_settings_page']);
         add_action('admin_init', [$this, 'register_settings']);
 
-        // Front‑end: scripts and form hooks
+        // Front‑end: scripts and form hooks - PUT THE BUTTONS EVERYWHERE
         add_action('wp_enqueue_scripts', [$this, 'enqueue_scripts']);
+        add_action('comment_form_top', [$this, 'render_auth_buttons']);
         add_action('comment_form_before', [$this, 'render_auth_buttons']);
+        add_action('comment_form_before_fields', [$this, 'render_auth_buttons']);
+        add_action('comment_form_after_fields', [$this, 'render_auth_buttons']);
+        add_action('comment_form_logged_in_after', [$this, 'render_auth_buttons']);
+        add_action('comment_form_after', [$this, 'render_auth_buttons']);
+        add_filter('comment_form_field_comment', [$this, 'add_buttons_before_textarea']);
         add_filter('preprocess_comment', [$this, 'handle_comment_submission']);
 
-        // Debug log to check if constructor is running
-        error_log('No More Comment Spam: Constructor initialized');
+        error_log('No More Comment Spam: Constructor initialized with ALL hooks');
     }
 
     private function opt($key, $default = null) {
@@ -370,15 +375,21 @@ class No_More_Comment_Spam {
         wp_enqueue_script('no-more-comment-spam');
     }
 
-    public function render_auth_buttons() {
-        // Debug log to check if function is being called
-        error_log('No More Comment Spam: render_auth_buttons called');
+    public function add_buttons_before_textarea($field) {
+        ob_start();
+        $this->render_auth_buttons();
+        $buttons = ob_get_clean();
+        return $buttons . $field;
+    }
 
-        // Only show on single posts/pages with comments enabled
-        if (!is_singular() || !comments_open()) {
-            error_log('No More Comment Spam: Not showing buttons - not singular or comments closed');
+    public function render_auth_buttons() {
+        static $buttons_rendered = false;
+        
+        if ($buttons_rendered) {
             return;
         }
+
+        error_log('No More Comment Spam: render_auth_buttons called');
 
         // Get auth methods, default to all enabled if none set
         $auth_methods = $this->opt('auth_methods', []);
@@ -392,21 +403,21 @@ class No_More_Comment_Spam {
         echo '<input type="hidden" name="lightning_pubkey" value="">';
         echo '<input type="hidden" name="nostr_pubkey" value="">';
         
-        // Start auth buttons container
-        echo '<div class="nmcs-auth-section" style="margin-bottom: 20px;">';
-        echo '<p>' . esc_html__('Please authenticate to comment:', 'no-more-comment-spam') . '</p>';
-        echo '<div class="nmcs-auth-buttons">';
+        // Start auth buttons container with IMPORTANT styling
+        echo '<div class="nmcs-auth-section" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; display: block !important; visibility: visible !important;">';
+        echo '<p style="margin-bottom: 15px; font-weight: bold; color: #333;">' . esc_html__('Please authenticate to comment:', 'no-more-comment-spam') . '</p>';
+        echo '<div class="nmcs-auth-buttons" style="display: flex !important; gap: 10px; flex-wrap: wrap;">';
         
         // Lightning Login
         if (in_array('lightning', $auth_methods)) {
             if (!class_exists('LNLogin')) {
                 error_log('No More Comment Spam: LNLogin class not found even after attempting to load from local directory');
-                echo '<div class="nmcs-error">' . 
+                echo '<div class="nmcs-error" style="padding: 10px; margin: 10px 0; background: #fff2f2; border-left: 4px solid #dc3232; color: #dc3232;">' . 
                     esc_html__('Lightning Login is not properly set up. Please check the plugin configuration.', 'no-more-comment-spam') . 
                     '</div>';
             } else {
-                echo '<button type="button" class="nmcs-button lightning-button" onclick="nmcsLightningLogin()">' .
-                    '<span class="nmcs-icon">⚡</span>' .
+                echo '<button type="button" class="nmcs-button lightning-button" style="display: inline-flex !important; align-items: center; padding: 8px 16px; border: none; border-radius: 4px; background: #f7931a; color: white; cursor: pointer; font-size: 14px; line-height: 1.4; text-decoration: none;" onclick="nmcsLightningLogin()">' .
+                    '<span class="nmcs-icon" style="margin-right: 8px;">⚡</span>' .
                     esc_html__('Login with Lightning', 'no-more-comment-spam') .
                     '</button>';
             }
@@ -414,16 +425,16 @@ class No_More_Comment_Spam {
 
         // Nostr Browser Extension
         if (in_array('nostr_browser', $auth_methods)) {
-            echo '<button type="button" class="nmcs-button nostr-button" onclick="nmcsNostrBrowserLogin()">' .
-                '<span class="nmcs-icon">🦩</span>' .
+            echo '<button type="button" class="nmcs-button nostr-button" style="display: inline-flex !important; align-items: center; padding: 8px 16px; border: none; border-radius: 4px; background: #6b47ed; color: white; cursor: pointer; font-size: 14px; line-height: 1.4; text-decoration: none;" onclick="nmcsNostrBrowserLogin()">' .
+                '<span class="nmcs-icon" style="margin-right: 8px;">🦩</span>' .
                 esc_html__('Login with Nostr Extension', 'no-more-comment-spam') .
                 '</button>';
         }
 
         // Nostr Connect
         if (in_array('nostr_connect', $auth_methods)) {
-            echo '<button type="button" class="nmcs-button nostr-connect-button" onclick="nmcsNostrConnectLogin()">' .
-                '<span class="nmcs-icon">🔑</span>' .
+            echo '<button type="button" class="nmcs-button nostr-connect-button" style="display: inline-flex !important; align-items: center; padding: 8px 16px; border: none; border-radius: 4px; background: #1d9bf0; color: white; cursor: pointer; font-size: 14px; line-height: 1.4; text-decoration: none;" onclick="nmcsNostrConnectLogin()">' .
+                '<span class="nmcs-icon" style="margin-right: 8px;">🔑</span>' .
                 esc_html__('Login with Nostr Connect', 'no-more-comment-spam') .
                 '</button>';
         }
@@ -431,11 +442,13 @@ class No_More_Comment_Spam {
         echo '</div>'; // Close nmcs-auth-buttons
 
         // Success message container
-        echo '<div id="nmcs-auth-success" class="nmcs-success" style="display: none;">' .
+        echo '<div id="nmcs-auth-success" class="nmcs-success" style="display: none; padding: 10px; margin: 10px 0; background: #f0fff0; border-left: 4px solid #46b450; color: #46b450;">' .
             esc_html__('Authentication successful! You can now submit your comment.', 'no-more-comment-spam') .
             '</div>';
             
         echo '</div>'; // Close nmcs-auth-section
+
+        $buttons_rendered = true;
     }
 
     public function handle_comment_submission($commentdata) {
