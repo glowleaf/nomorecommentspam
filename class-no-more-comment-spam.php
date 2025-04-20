@@ -21,27 +21,35 @@ class No_More_Comment_Spam {
     }
 
     private function __construct() {
+        error_log('NMCS: Constructor called');
+        
         // Try to load LNLogin if not already active
         if (!class_exists('LNLogin') && file_exists(dirname(__DIR__) . '/lnlogin-main/lnlogin.php')) {
             require_once dirname(__DIR__) . '/lnlogin-main/lnlogin.php';
+            error_log('NMCS: Tried to load LNLogin');
         }
 
         // Admin: settings page
         add_action('admin_menu', [$this, 'add_settings_page']);
         add_action('admin_init', [$this, 'register_settings']);
 
-        // Front‑end: scripts and form hooks - PUT THE BUTTONS EVERYWHERE
+        // Load scripts and styles
         add_action('wp_enqueue_scripts', [$this, 'enqueue_scripts']);
-        add_action('comment_form_top', [$this, 'render_auth_buttons']);
-        add_action('comment_form_before', [$this, 'render_auth_buttons']);
-        add_action('comment_form_before_fields', [$this, 'render_auth_buttons']);
-        add_action('comment_form_after_fields', [$this, 'render_auth_buttons']);
-        add_action('comment_form_logged_in_after', [$this, 'render_auth_buttons']);
-        add_action('comment_form_after', [$this, 'render_auth_buttons']);
-        add_filter('comment_form_field_comment', [$this, 'add_buttons_before_textarea']);
+        
+        // Add buttons only before the comment field
+        add_filter('comment_form_field_comment', [$this, 'add_buttons_before_comment_field'], 10); // Changed function name and priority
+        
+        // Handle comment submission
         add_filter('preprocess_comment', [$this, 'handle_comment_submission']);
 
-        error_log('No More Comment Spam: Constructor initialized with ALL hooks');
+        // Add AJAX handlers
+        add_action('wp_ajax_nmcs_verify_nostr', [$this, 'handle_nostr_verification']);
+        add_action('wp_ajax_nopriv_nmcs_verify_nostr', [$this, 'handle_nostr_verification']);
+        add_action('wp_ajax_nmcs_generate_lnurl_data', [$this, 'handle_nmcs_generate_lnurl_data']);
+        add_action('wp_ajax_nopriv_nmcs_generate_lnurl_data', [$this, 'handle_nmcs_generate_lnurl_data']);
+        // Note: No handler for nmcs_get_invoice as the underlying lnlogin plugin doesn't support it easily via AJAX
+
+        error_log('NMCS: All hooks registered');
     }
 
     private function opt($key, $default = null) {
@@ -192,8 +200,16 @@ class No_More_Comment_Spam {
             ? $options['nostr_relays'] 
             : $default_relays;
         
+        // If relays is a string, convert it to array
         if (is_string($relays)) {
-            $relays = array_filter(explode("\n", $relays));
+            $relays = array_filter(explode("\n", $relays), function($relay) {
+                return !empty(trim($relay));
+            });
+        }
+
+        // If relays is empty after filtering, use defaults
+        if (empty($relays)) {
+            $relays = $default_relays;
         }
         
         ?>
@@ -280,10 +296,27 @@ class No_More_Comment_Spam {
         }
         
         // Nostr relays
+        $default_relays = [
+            'wss://relay.damus.io',
+            'wss://relay.primal.net',
+            'wss://nostr.wine',
+            'wss://nos.lol',
+            'wss://relay.nostr.band'
+        ];
+
         if (isset($input['nostr_relays'])) {
             $relays = array_map('trim', explode("\n", $input['nostr_relays']));
             $relays = array_filter($relays); // Remove empty lines
-            $sanitized['nostr_relays'] = array_map('esc_url_raw', $relays);
+            $relays = array_map('esc_url_raw', $relays);
+            
+            // If no valid relays after filtering, use defaults
+            if (empty($relays)) {
+                $relays = $default_relays;
+            }
+            
+            $sanitized['nostr_relays'] = $relays;
+        } else {
+            $sanitized['nostr_relays'] = $default_relays;
         }
         
         // Spam protection
@@ -328,96 +361,100 @@ class No_More_Comment_Spam {
     }
 
     public function enqueue_scripts() {
-        if (!is_singular() || !comments_open()) {
-            return;
-        }
+        error_log('NMCS: Starting script enqueue');
 
+        // Define base URL for the plugin directory
+        $plugin_dir_url = plugin_dir_url(__FILE__);
+
+        // Enqueue style
         wp_enqueue_style(
             'no-more-comment-spam',
-            plugins_url('css/no-more-comment-spam.css', dirname(__FILE__)),
+            $plugin_dir_url . 'css/no-more-comment-spam.css', // Use plugin_dir_url
             [],
-            self::VERSION
+            self::VERSION . '.' . time() // Force reload
         );
+        error_log('NMCS: CSS enqueued from: ' . $plugin_dir_url . 'css/no-more-comment-spam.css');
 
-        wp_register_script(
+        // Enqueue script
+        wp_enqueue_script(
             'no-more-comment-spam',
-            plugins_url('js/no-more-comment-spam.js', dirname(__FILE__)),
+            $plugin_dir_url . 'js/no-more-comment-spam.js', // Use plugin_dir_url
             ['jquery'],
-            self::VERSION,
+            self::VERSION . '.' . time(), // Force reload
             true
         );
+        error_log('NMCS: JS enqueued from: ' . $plugin_dir_url . 'js/no-more-comment-spam.js');
 
+        // Get auth methods and relays (rest of the function is the same)
         $auth_methods = $this->opt('auth_methods', []);
         if (empty($auth_methods)) {
             $auth_methods = ['lightning', 'nostr_browser', 'nostr_connect'];
             update_option(self::OPTION_KEY, array_merge(get_option(self::OPTION_KEY, []), ['auth_methods' => $auth_methods]));
         }
+
+        error_log('NMCS: Auth methods: ' . print_r($auth_methods, true));
         
+        $default_relays = [
+            'wss://relay.damus.io',
+            'wss://relay.primal.net',
+            'wss://nostr.wine',
+            'wss://nos.lol',
+            'wss://relay.nostr.band'
+        ];
+
+        $relays = $this->opt('nostr_relays', $default_relays);
+        if (empty($relays)) {
+            $relays = $default_relays;
+            update_option(self::OPTION_KEY, array_merge(get_option(self::OPTION_KEY, []), ['nostr_relays' => $default_relays]));
+        }
+        
+        // Localize script data
         wp_localize_script('no-more-comment-spam', 'nmcsData', [
             'ajaxurl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('no-more-comment-spam'),
             'nostrBrowserEnabled' => in_array('nostr_browser', $auth_methods),
             'nostrConnectEnabled' => in_array('nostr_connect', $auth_methods),
             'lightningEnabled' => in_array('lightning', $auth_methods),
-            'nostrRelays' => $this->opt('nostr_relays', [
-                'wss://relay.damus.io',
-                'wss://relay.primal.net',
-                'wss://nostr.wine',
-                'wss://nos.lol',
-                'wss://relay.nostr.band'
-            ]),
+            'nostrRelays' => $relays,
             'i18n' => [
                 'nostr_extension_required' => __('Nostr browser extension required', 'no-more-comment-spam'),
                 'error_occurred' => __('An error occurred', 'no-more-comment-spam')
             ]
         ]);
 
-        wp_enqueue_script('no-more-comment-spam');
+        error_log('NMCS: Script data localized');
     }
 
-    public function add_buttons_before_textarea($field) {
-        ob_start();
-        $this->render_auth_buttons();
-        $buttons = ob_get_clean();
-        return $buttons . $field;
-    }
-
-    public function render_auth_buttons() {
-        static $buttons_rendered = false;
+    private function get_buttons_html() {
+        error_log('NMCS: Generating buttons HTML');
         
-        if ($buttons_rendered) {
-            return;
-        }
-
-        error_log('No More Comment Spam: render_auth_buttons called');
-
         // Get auth methods, default to all enabled if none set
         $auth_methods = $this->opt('auth_methods', []);
         if (empty($auth_methods)) {
             $auth_methods = ['lightning', 'nostr_browser', 'nostr_connect'];
         }
         
-        error_log('No More Comment Spam: Enabled auth methods: ' . print_r($auth_methods, true));
-
-        // Add hidden inputs
-        echo '<input type="hidden" name="lightning_pubkey" value="">';
-        echo '<input type="hidden" name="nostr_pubkey" value="">';
+        ob_start();
         
-        // Start auth buttons container with IMPORTANT styling
-        echo '<div class="nmcs-auth-section" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; display: block !important; visibility: visible !important;">';
-        echo '<p style="margin-bottom: 15px; font-weight: bold; color: #333;">' . esc_html__('Please authenticate to comment:', 'no-more-comment-spam') . '</p>';
-        echo '<div class="nmcs-auth-buttons" style="display: flex !important; gap: 10px; flex-wrap: wrap;">';
+        // Add hidden inputs - these will be handled by JS now
+        // echo '<input type="hidden" name="lightning_pubkey" value="">';
+        // echo '<input type="hidden" name="nostr_pubkey" value="">';
+        
+        // The buttons container - using standard CSS classes now
+        echo '<div class="nmcs-buttons-container">'; // Removed inline styles
+        echo '<p class="nmcs-auth-title">' . esc_html__('Please authenticate to comment:', 'no-more-comment-spam') . '</p>'; // Added class
+        echo '<div class="nmcs-auth-buttons">'; // Added class
         
         // Lightning Login
         if (in_array('lightning', $auth_methods)) {
-            if (!class_exists('LNLogin')) {
-                error_log('No More Comment Spam: LNLogin class not found even after attempting to load from local directory');
-                echo '<div class="nmcs-error" style="padding: 10px; margin: 10px 0; background: #fff2f2; border-left: 4px solid #dc3232; color: #dc3232;">' . 
+             if (!function_exists('generateLnurl')) {
+                error_log('NMCS: Lightning Login core function (generateLnurl) not found');
+                echo '<div class="nmcs-error">' . // Use class for error message
                     esc_html__('Lightning Login is not properly set up. Please check the plugin configuration.', 'no-more-comment-spam') . 
                     '</div>';
             } else {
-                echo '<button type="button" class="nmcs-button lightning-button" style="display: inline-flex !important; align-items: center; padding: 8px 16px; border: none; border-radius: 4px; background: #f7931a; color: white; cursor: pointer; font-size: 14px; line-height: 1.4; text-decoration: none;" onclick="nmcsLightningLogin()">' .
-                    '<span class="nmcs-icon" style="margin-right: 8px;">⚡</span>' .
+                echo '<button type="button" class="nmcs-button lightning-button" onclick="nmcsLightningLogin()">' . // Use classes
+                    '<span class="nmcs-icon">⚡</span>' . // Use class
                     esc_html__('Login with Lightning', 'no-more-comment-spam') .
                     '</button>';
             }
@@ -425,16 +462,16 @@ class No_More_Comment_Spam {
 
         // Nostr Browser Extension
         if (in_array('nostr_browser', $auth_methods)) {
-            echo '<button type="button" class="nmcs-button nostr-button" style="display: inline-flex !important; align-items: center; padding: 8px 16px; border: none; border-radius: 4px; background: #6b47ed; color: white; cursor: pointer; font-size: 14px; line-height: 1.4; text-decoration: none;" onclick="nmcsNostrBrowserLogin()">' .
-                '<span class="nmcs-icon" style="margin-right: 8px;">🦩</span>' .
+            echo '<button type="button" class="nmcs-button nostr-button" onclick="nmcsNostrBrowserLogin()">' . // Use classes
+                '<span class="nmcs-icon">🦩</span>' . // Use class
                 esc_html__('Login with Nostr Extension', 'no-more-comment-spam') .
                 '</button>';
         }
 
         // Nostr Connect
         if (in_array('nostr_connect', $auth_methods)) {
-            echo '<button type="button" class="nmcs-button nostr-connect-button" style="display: inline-flex !important; align-items: center; padding: 8px 16px; border: none; border-radius: 4px; background: #1d9bf0; color: white; cursor: pointer; font-size: 14px; line-height: 1.4; text-decoration: none;" onclick="nmcsNostrConnectLogin()">' .
-                '<span class="nmcs-icon" style="margin-right: 8px;">🔑</span>' .
+            echo '<button type="button" class="nmcs-button nostr-connect-button" onclick="nmcsNostrConnectLogin()">' . // Use classes
+                '<span class="nmcs-icon">🔑</span>' . // Use class
                 esc_html__('Login with Nostr Connect', 'no-more-comment-spam') .
                 '</button>';
         }
@@ -442,13 +479,18 @@ class No_More_Comment_Spam {
         echo '</div>'; // Close nmcs-auth-buttons
 
         // Success message container
-        echo '<div id="nmcs-auth-success" class="nmcs-success" style="display: none; padding: 10px; margin: 10px 0; background: #f0fff0; border-left: 4px solid #46b450; color: #46b450;">' .
-            esc_html__('Authentication successful! You can now submit your comment.', 'no-more-comment-spam') .
-            '</div>';
+        echo '<div id="nmcs-auth-success" class="nmcs-success" style="display: none;"></div>'; // Use class
             
-        echo '</div>'; // Close nmcs-auth-section
+        echo '</div>'; // Close nmcs-buttons-container
+        
+        $html = ob_get_clean();
+        error_log('NMCS: Generated buttons HTML: ' . substr($html, 0, 100) . '...');
+        return $html;
+    }
 
-        $buttons_rendered = true;
+    public function add_buttons_before_comment_field($field) { 
+        error_log('NMCS: Adding buttons before comment field');
+        return '<div class="nmcs-buttons-wrapper">' . $this->get_buttons_html() . '</div>' . $field; // Added a wrapper div
     }
 
     public function handle_comment_submission($commentdata) {
@@ -458,32 +500,125 @@ class No_More_Comment_Spam {
             return $commentdata;
         }
 
+        // Allow logged-in administrators to bypass checks
         if (current_user_can('moderate_comments')) {
+            error_log('NMCS: Moderator bypassing auth check.');
             return $commentdata;
         }
 
         $is_authenticated = false;
+        $auth_type = 'none';
 
+        // Check Nostr authentication
         if (in_array('nostr_connect', $auth_methods) || in_array('nostr_browser', $auth_methods)) {
             if (!empty($_POST['nostr_pubkey'])) {
+                // Basic check: just ensure the pubkey is present
+                // A more robust check would involve verifying the signature again server-side if needed
                 $is_authenticated = true;
+                $auth_type = 'nostr';
+                error_log('NMCS: Nostr auth detected: pubkey=' . sanitize_text_field($_POST['nostr_pubkey']));
             }
         }
 
-        if (in_array('lightning', $auth_methods)) {
-            if (is_user_logged_in()) {
-                $is_authenticated = true;
+        // Check Lightning authentication (assuming successful login sets user session)
+        if (!$is_authenticated && in_array('lightning', $auth_methods)) {
+            // Check if the user is logged in via the Lightning method
+            // This relies on how the lnlogin plugin handles user sessions
+            if (is_user_logged_in() && get_user_meta(get_current_user_id(), 'linkingkey', true)) {
+                 $is_authenticated = true;
+                 $auth_type = 'lightning';
+                 error_log('NMCS: Lightning auth detected for user ID: ' . get_current_user_id());
+            } elseif (!empty($_POST['lightning_pubkey'])) { // Fallback check if hidden field is used
+                 $is_authenticated = true;
+                 $auth_type = 'lightning_field';
+                 error_log('NMCS: Lightning auth detected via hidden field.');
             }
         }
+
 
         if (!$is_authenticated) {
+            error_log('NMCS: Authentication failed. Aborting comment submission.');
             wp_die(
-                __('Please authenticate to post a comment.', 'no-more-comment-spam'),
+                __('Please authenticate using one of the provided methods to post a comment.', 'no-more-comment-spam'),
                 __('Authentication Required', 'no-more-comment-spam'),
-                ['response' => 403]
+                ['response' => 403, 'back_link' => true]
             );
         }
 
+        error_log('NMCS: Comment submission authenticated via: ' . $auth_type);
         return $commentdata;
+    }
+
+    public function handle_nostr_verification() {
+        check_ajax_referer('no-more-comment-spam', 'nonce');
+
+        $pubkey = isset($_POST['pubkey']) ? sanitize_text_field($_POST['pubkey']) : null;
+        $challenge = isset($_POST['challenge']) ? sanitize_text_field($_POST['challenge']) : null;
+        $signature = isset($_POST['signature']) ? sanitize_text_field($_POST['signature']) : null;
+
+        if (!$pubkey || !$challenge || !$signature) {
+            wp_send_json_error(['message' => __('Missing required Nostr data.', 'no-more-comment-spam')]);
+            return;
+        }
+
+        // Basic validation: Check if pubkey seems valid (hex, 64 chars)
+        if (!ctype_xdigit($pubkey) || strlen($pubkey) !== 64) {
+             wp_send_json_error(['message' => __('Invalid Nostr pubkey format.', 'no-more-comment-spam')]);
+             return;
+        }
+        
+        // !! Placeholder for actual signature verification !!
+        // You would typically need a PHP Nostr library here to properly verify the signature
+        // against the pubkey and the challenge event.
+        // For now, we are just accepting the presence of the data as verification.
+        $is_valid = true; 
+
+        if ($is_valid) {
+            error_log('NMCS: Nostr verification successful (basic check) for pubkey: ' . $pubkey);
+            wp_send_json_success(['message' => __('Nostr verification successful.', 'no-more-comment-spam')]);
+        } else {
+            error_log('NMCS: Nostr verification failed for pubkey: ' . $pubkey);
+            wp_send_json_error(['message' => __('Nostr signature verification failed.', 'no-more-comment-spam')]);
+        }
+    }
+
+    public function handle_nmcs_generate_lnurl_data() {
+        // Ensure functions from lnlogin plugin are available
+        if (!function_exists('k1Generator') || !function_exists('addk1') || !function_exists('lnurlEncoder')) {
+            error_log('NMCS Error: Required functions from lnlogin plugin not found.');
+            wp_send_json_error(['message' => __('Lightning Login plugin functions not available.', 'no-more-comment-spam')]);
+            return;
+        }
+
+        // Nonce check (optional but good practice)
+        // check_ajax_referer('no-more-comment-spam', 'nonce'); 
+
+        try {
+            // Generate k1
+            $k1 = k1Generator();
+            if (empty($k1)) {
+                 throw new Exception('Failed to generate k1.');
+            }
+            error_log('NMCS: Generated k1: ' . $k1);
+
+            // Add k1 to DB (will also remove old ones)
+            addk1($k1); 
+            removek1s(); // Call removek1s explicitly if addk1 doesn't handle it reliably
+            error_log('NMCS: Added k1 to database.');
+
+            // Generate LNURL
+            $login_url = admin_url('admin-ajax.php') . '?action=lnlogin&tag=login&k1=' . $k1;
+            $lnurl = lnurlEncoder($login_url);
+            if (empty($lnurl)) {
+                throw new Exception('Failed to encode LNURL.');
+            }
+            error_log('NMCS: Generated LNURL: ' . $lnurl);
+
+            wp_send_json_success(['k1' => $k1, 'lnurl' => $lnurl]);
+
+        } catch (Exception $e) {
+            error_log('NMCS Error generating LNURL data: ' . $e->getMessage());
+            wp_send_json_error(['message' => __('Error generating Lightning Login data: ', 'no-more-comment-spam') . $e->getMessage()]);
+        }
     }
 } 

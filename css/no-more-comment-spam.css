@@ -1,0 +1,293 @@
+.nmcs-auth-container {
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 4px;
+}
+
+.nmcs-auth-container button {
+    margin: 5px;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.nmcs-lightning-login {
+    background-color: #f7931a;
+    color: white;
+}
+
+.nmcs-lightning-login:hover {
+    background-color: #e88a18;
+}
+
+.nmcs-nostr-browser {
+    background-color: #6b47ed;
+    color: white;
+}
+
+.nmcs-nostr-browser:hover {
+    background-color: #5a3bd4;
+}
+
+.nmcs-nostr-connect {
+    background-color: #1d9bf0;
+    color: white;
+}
+
+.nmcs-nostr-connect:hover {
+    background-color: #1a8cd8;
+}
+
+.nmcs-success {
+    display: none;
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f0fff0;
+    color: #46b450;
+    border-left: 4px solid #46b450;
+    border-radius: 4px;
+}
+
+.nmcs-error {
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #fff2f2;
+    color: #dc3232;
+    border-left: 4px solid #dc3232;
+    border-radius: 4px;
+    display: block;
+}
+
+.nmcs-info {
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #eef6fd;
+    color: #1976d2;
+    border-left: 4px solid #1976d2;
+    border-radius: 4px;
+    display: none;
+}
+
+.nmcs-auth-title {
+    margin: 0 0 10px 0;
+    padding: 0;
+    font-weight: bold;
+    color: #333;
+}
+
+.nmcs-auth-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5em 1em;
+    margin: 0.25em;
+    border: none;
+    border-radius: 4px;
+    background: #fff;
+    color: #333;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.nmcs-auth-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.nmcs-auth-icon {
+    margin-right: 0.5em;
+    font-size: 1.2em;
+}
+
+.nmcs-auth-status {
+    margin-top: 0.5em;
+    padding: 0.5em;
+    border-radius: 4px;
+    background: #e8f5e9;
+    border: 1px solid #c8e6c9;
+}
+
+.nmcs-auth-success {
+    margin: 0 !important;
+    color: #2e7d32;
+    font-weight: 600;
+}
+
+.nmcs-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.nmcs-modal-content {
+    background: #fff;
+    padding: 20px 30px;
+    border-radius: 5px;
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.nmcs-modal-content h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+#nmcs-qr-code-container {
+    margin: 15px auto;
+    min-height: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#nmcs-qr-code-container img, 
+#nmcs-qr-code-container canvas, 
+#nmcs-qr-code-container div {
+    display: block;
+    margin: 0 auto;
+}
+
+.nmcs-modal-content pre {
+    background: #f5f5f5;
+    padding: 10px;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 10px 0;
+    font-size: 0.9em;
+    text-align: left;
+}
+
+.nmcs-modal-content button#nmcs-lnurl-close {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin-top: 15px;
+    transition: background-color 0.2s;
+}
+
+.nmcs-modal-content button#nmcs-lnurl-close:hover {
+    background: #5a6268;
+}
+
+.nmcs-auth-required {
+    max-width: 600px;
+    margin: 2em auto;
+    padding: 2em;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.nmcs-auth-required p {
+    margin: 1em 0;
+    color: #333;
+}
+
+.nmcs-auth-required a {
+    color: #2196F3;
+    text-decoration: none;
+}
+
+.nmcs-auth-required a:hover {
+    text-decoration: underline;
+}
+
+.nmcs-auth-section {
+    margin: 1em 0;
+    padding: 1em;
+    background: #f9f9f9;
+    border-radius: 4px;
+}
+
+.nmcs-auth-section p {
+    margin: 0 0 1em 0;
+    font-weight: bold;
+}
+
+.nmcs-auth-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.nmcs-buttons-wrapper {
+    margin-bottom: 1em;
+}
+
+.nmcs-buttons-container {
+    margin-bottom: 15px;
+    padding: 15px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+.nmcs-button {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    background: #f0f0f0;
+    color: #333;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1.4;
+    text-decoration: none;
+    transition: background-color 0.2s, box-shadow 0.2s;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+.nmcs-button:hover {
+    background-color: #e0e0e0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.nmcs-icon {
+    margin-right: 8px;
+    font-size: 16px;
+}
+
+.nmcs-button.lightning-button {
+    background-color: #f7931a;
+    color: white;
+}
+
+.nmcs-button.lightning-button:hover {
+    background-color: #e88a18;
+}
+
+.nmcs-button.nostr-button {
+    background-color: #6b47ed;
+    color: white;
+}
+
+.nmcs-button.nostr-button:hover {
+    background-color: #5a3cd4;
+}
+
+.nmcs-button.nostr-connect-button {
+    background-color: #1d9bf0;
+    color: white;
+} 
