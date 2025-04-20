@@ -32,9 +32,11 @@ class No_More_Comment_Spam {
 
         // Front‑end: scripts and form hooks
         add_action('wp_enqueue_scripts', [$this, 'enqueue_scripts']);
-        add_action('comment_form_after_fields', [$this, 'render_auth_buttons']);
-        add_action('comment_form_logged_in_after', [$this, 'render_auth_buttons']);
+        add_action('comment_form_before', [$this, 'render_auth_buttons']);
         add_filter('preprocess_comment', [$this, 'handle_comment_submission']);
+
+        // Debug log to check if constructor is running
+        error_log('No More Comment Spam: Constructor initialized');
     }
 
     private function opt($key, $default = null) {
@@ -369,8 +371,12 @@ class No_More_Comment_Spam {
     }
 
     public function render_auth_buttons() {
+        // Debug log to check if function is being called
+        error_log('No More Comment Spam: render_auth_buttons called');
+
         // Only show on single posts/pages with comments enabled
         if (!is_singular() || !comments_open()) {
+            error_log('No More Comment Spam: Not showing buttons - not singular or comments closed');
             return;
         }
 
@@ -382,16 +388,12 @@ class No_More_Comment_Spam {
         
         error_log('No More Comment Spam: Enabled auth methods: ' . print_r($auth_methods, true));
 
-        // Remove the action for the current hook to prevent duplicate buttons
-        remove_action('comment_form_after_fields', [$this, 'render_auth_buttons']);
-        remove_action('comment_form_logged_in_after', [$this, 'render_auth_buttons']);
-
         // Add hidden inputs
         echo '<input type="hidden" name="lightning_pubkey" value="">';
         echo '<input type="hidden" name="nostr_pubkey" value="">';
         
         // Start auth buttons container
-        echo '<div class="nmcs-auth-section">';
+        echo '<div class="nmcs-auth-section" style="margin-bottom: 20px;">';
         echo '<p>' . esc_html__('Please authenticate to comment:', 'no-more-comment-spam') . '</p>';
         echo '<div class="nmcs-auth-buttons">';
         
