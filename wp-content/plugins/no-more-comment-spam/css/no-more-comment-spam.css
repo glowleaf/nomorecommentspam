@@ -1,0 +1,151 @@
+.nmcs-auth-container {
+    margin: 1em 0;
+    padding: 1em;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #f9f9f9;
+}
+
+.nmcs-auth-title {
+    margin: 0 0 0.5em 0 !important;
+    font-weight: 600;
+    color: #333;
+}
+
+.nmcs-auth-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5em 1em;
+    margin: 0.25em;
+    border: none;
+    border-radius: 4px;
+    background: #fff;
+    color: #333;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.nmcs-auth-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.nmcs-auth-icon {
+    margin-right: 0.5em;
+    font-size: 1.2em;
+}
+
+.nmcs-lightning-btn {
+    background: #FFD700;
+    color: #000;
+}
+
+.nmcs-nostr-browser-btn {
+    background: #8A2BE2;
+    color: #fff;
+}
+
+.nmcs-auth-status {
+    margin-top: 0.5em;
+    padding: 0.5em;
+    border-radius: 4px;
+    background: #e8f5e9;
+    border: 1px solid #c8e6c9;
+}
+
+.nmcs-auth-success {
+    margin: 0 !important;
+    color: #2e7d32;
+    font-weight: 600;
+}
+
+.nmcs-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.nmcs-modal-content {
+    background: #fff;
+    padding: 2em;
+    border-radius: 8px;
+    max-width: 90%;
+    width: 400px;
+    text-align: center;
+}
+
+.nmcs-modal-content h3 {
+    margin-top: 0;
+    color: #333;
+}
+
+.nmcs-modal-content img {
+    max-width: 200px;
+    margin: 1em auto;
+    display: block;
+}
+
+.nmcs-modal-content pre {
+    background: #f5f5f5;
+    padding: 1em;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 1em 0;
+    font-size: 0.9em;
+}
+
+.nmcs-modal-content button {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 0.5em 1em;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    margin-top: 1em;
+}
+
+.nmcs-modal-content button:hover {
+    background: #45a049;
+}
+
+.nmcs-error {
+    background: #ffebee;
+    border: 1px solid #ffcdd2;
+    color: #c62828;
+    padding: 1em;
+    margin: 1em 0;
+    border-radius: 4px;
+}
+
+.nmcs-auth-required {
+    max-width: 600px;
+    margin: 2em auto;
+    padding: 2em;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.nmcs-auth-required p {
+    margin: 1em 0;
+    color: #333;
+}
+
+.nmcs-auth-required a {
+    color: #2196F3;
+    text-decoration: none;
+}
+
+.nmcs-auth-required a:hover {
+    text-decoration: underline;
+} 
