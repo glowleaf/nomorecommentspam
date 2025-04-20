@@ -148,4 +148,90 @@
 
 .nmcs-auth-required a:hover {
     text-decoration: underline;
+}
+
+.nmcs-auth-section {
+    margin: 1em 0;
+    padding: 1em;
+    background: #f9f9f9;
+    border-radius: 4px;
+}
+
+.nmcs-auth-section p {
+    margin: 0 0 1em 0;
+    font-weight: bold;
+}
+
+.nmcs-auth-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 1em;
+}
+
+.nmcs-button {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    background: #f0f0f0;
+    color: #333;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1.4;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.nmcs-button:hover {
+    background: #e0e0e0;
+}
+
+.nmcs-button .nmcs-icon {
+    margin-right: 8px;
+    font-size: 16px;
+}
+
+.nmcs-button.lightning-button {
+    background: #f7931a;
+    color: white;
+}
+
+.nmcs-button.lightning-button:hover {
+    background: #e88a18;
+}
+
+.nmcs-button.nostr-button {
+    background: #6b47ed;
+    color: white;
+}
+
+.nmcs-button.nostr-button:hover {
+    background: #5a3cd4;
+}
+
+.nmcs-button.nostr-connect-button {
+    background: #1d9bf0;
+    color: white;
+}
+
+.nmcs-button.nostr-connect-button:hover {
+    background: #1a8cd8;
+}
+
+.nmcs-error {
+    padding: 10px;
+    margin: 10px 0;
+    background: #fff2f2;
+    border-left: 4px solid #dc3232;
+    color: #dc3232;
+}
+
+.nmcs-success {
+    padding: 10px;
+    margin: 10px 0;
+    background: #f0fff0;
+    border-left: 4px solid #46b450;
+    color: #46b450;
 } 
