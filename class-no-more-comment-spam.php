@@ -175,13 +175,14 @@ class No_More_Comment_Spam {
             'wss://relay.damus.io',
             'wss://relay.primal.net',
             'wss://nostr.wine',
-            'wss://nos.lol'
+            'wss://nos.lol',
+            'wss://relay.nostr.band'
         ]);
         ?>
         <textarea name="<?php echo esc_attr(self::OPTION_KEY); ?>[nostr_relays]" 
                   rows="5" 
                   cols="50"><?php echo esc_textarea(implode("\n", $relays)); ?></textarea>
-        <p class="description"><?php _e('One relay per line. These relays will be used for Nostr authentication.', 'no-more-comment-spam'); ?></p>
+        <p class="description"><?php _e('One relay per line. These relays will be used for Nostr authentication. Default relays include Damus, Primal, nostr.wine, nos.lol, and nostr.band.', 'no-more-comment-spam'); ?></p>
         <?php
     }
 
