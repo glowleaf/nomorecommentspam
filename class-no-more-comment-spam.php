@@ -32,8 +32,8 @@ class No_More_Comment_Spam {
 
         // Front‑end: scripts and form hooks
         add_action('wp_enqueue_scripts', [$this, 'enqueue_scripts']);
-        add_action('comment_form_before_fields', [$this, 'render_auth_buttons']);
-        add_action('comment_form_top', [$this, 'render_auth_buttons']);
+        add_action('comment_form_after_fields', [$this, 'render_auth_buttons']);
+        add_action('comment_form_logged_in_after', [$this, 'render_auth_buttons']);
         add_filter('preprocess_comment', [$this, 'handle_comment_submission']);
     }
 
@@ -321,7 +321,7 @@ class No_More_Comment_Spam {
     }
 
     public function enqueue_scripts() {
-        if (!is_singular()) {
+        if (!is_singular() || !comments_open()) {
             return;
         }
 
@@ -332,7 +332,7 @@ class No_More_Comment_Spam {
             self::VERSION
         );
 
-        wp_enqueue_script(
+        wp_register_script(
             'no-more-comment-spam',
             plugins_url('js/no-more-comment-spam.js', dirname(__FILE__)),
             ['jquery'],
@@ -341,6 +341,10 @@ class No_More_Comment_Spam {
         );
 
         $auth_methods = $this->opt('auth_methods', []);
+        if (empty($auth_methods)) {
+            $auth_methods = ['lightning', 'nostr_browser', 'nostr_connect'];
+            update_option(self::OPTION_KEY, array_merge(get_option(self::OPTION_KEY, []), ['auth_methods' => $auth_methods]));
+        }
         
         wp_localize_script('no-more-comment-spam', 'nmcsData', [
             'ajaxurl' => admin_url('admin-ajax.php'),
@@ -348,11 +352,20 @@ class No_More_Comment_Spam {
             'nostrBrowserEnabled' => in_array('nostr_browser', $auth_methods),
             'nostrConnectEnabled' => in_array('nostr_connect', $auth_methods),
             'lightningEnabled' => in_array('lightning', $auth_methods),
+            'nostrRelays' => $this->opt('nostr_relays', [
+                'wss://relay.damus.io',
+                'wss://relay.primal.net',
+                'wss://nostr.wine',
+                'wss://nos.lol',
+                'wss://relay.nostr.band'
+            ]),
             'i18n' => [
                 'nostr_extension_required' => __('Nostr browser extension required', 'no-more-comment-spam'),
                 'error_occurred' => __('An error occurred', 'no-more-comment-spam')
             ]
         ]);
+
+        wp_enqueue_script('no-more-comment-spam');
     }
 
     public function render_auth_buttons() {
@@ -361,18 +374,17 @@ class No_More_Comment_Spam {
             return;
         }
 
+        // Get auth methods, default to all enabled if none set
         $auth_methods = $this->opt('auth_methods', []);
-        $enabled_methods = array_filter($auth_methods);
-        error_log('No More Comment Spam: Enabled auth methods: ' . print_r($enabled_methods, true));
-        
-        if (empty($enabled_methods)) {
-            error_log('No More Comment Spam: No authentication methods enabled');
-            return;
+        if (empty($auth_methods)) {
+            $auth_methods = ['lightning', 'nostr_browser', 'nostr_connect'];
         }
+        
+        error_log('No More Comment Spam: Enabled auth methods: ' . print_r($auth_methods, true));
 
         // Remove the action for the current hook to prevent duplicate buttons
-        remove_action('comment_form_before_fields', [$this, 'render_auth_buttons']);
-        remove_action('comment_form_top', [$this, 'render_auth_buttons']);
+        remove_action('comment_form_after_fields', [$this, 'render_auth_buttons']);
+        remove_action('comment_form_logged_in_after', [$this, 'render_auth_buttons']);
 
         // Add hidden inputs
         echo '<input type="hidden" name="lightning_pubkey" value="">';
@@ -384,7 +396,7 @@ class No_More_Comment_Spam {
         echo '<div class="nmcs-auth-buttons">';
         
         // Lightning Login
-        if (in_array('lightning', $enabled_methods)) {
+        if (in_array('lightning', $auth_methods)) {
             if (!class_exists('LNLogin')) {
                 error_log('No More Comment Spam: LNLogin class not found even after attempting to load from local directory');
                 echo '<div class="nmcs-error">' . 
@@ -399,7 +411,7 @@ class No_More_Comment_Spam {
         }
 
         // Nostr Browser Extension
-        if (in_array('nostr_browser', $enabled_methods)) {
+        if (in_array('nostr_browser', $auth_methods)) {
             echo '<button type="button" class="nmcs-button nostr-button" onclick="nmcsNostrBrowserLogin()">' .
                 '<span class="nmcs-icon">🦩</span>' .
                 esc_html__('Login with Nostr Extension', 'no-more-comment-spam') .
@@ -407,7 +419,7 @@ class No_More_Comment_Spam {
         }
 
         // Nostr Connect
-        if (in_array('nostr_connect', $enabled_methods)) {
+        if (in_array('nostr_connect', $auth_methods)) {
             echo '<button type="button" class="nmcs-button nostr-connect-button" onclick="nmcsNostrConnectLogin()">' .
                 '<span class="nmcs-icon">🔑</span>' .
                 esc_html__('Login with Nostr Connect', 'no-more-comment-spam') .
