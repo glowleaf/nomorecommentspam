@@ -1,11 +1,23 @@
 <?php
 /**
- * Plugin Name: No More Comment Spam
- * Description: Protect your WordPress comments from spam using Lightning Network payments and Nostr authentication
- * Version: 1.0.0
- * Author: glowleaf
- * Author URI: https://glowleaf.com
- * License: GPL v2 or later
+ * Plugin Name:       No More Comment Spam
+ * Plugin URI:        https://github.com/glowleaf/nomorecommentspam
+ * Description:       Protect your WordPress comments from spam using Lightning Network payments and Nostr authentication. Requires authentication before commenting to eliminate spam.
+ * Version:           1.0.0
+ * Requires at least: 5.0
+ * Requires PHP:      7.4
+ * Author:            glowleaf
+ * Author URI:        https://glowleaf.com
+ * License:           GPL v2 or later
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain:       no-more-comment-spam
+ * Domain Path:       /languages
+ * Network:           false
+ *
+ * @package           NoMoreCommentSpam
+ * @author            glowleaf
+ * @copyright         2025 glowleaf
+ * @license           GPL-2.0-or-later
  */
 
 defined('ABSPATH') or die('No direct script access allowed.');
