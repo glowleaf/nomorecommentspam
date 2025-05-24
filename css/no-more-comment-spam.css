@@ -60,6 +60,8 @@
     border-left: 4px solid #dc3232;
     border-radius: 4px;
     display: block;
+    line-height: 1.5;
+    white-space: pre-line;
 }
 
 .nmcs-info {
