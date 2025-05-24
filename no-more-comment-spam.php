@@ -7,7 +7,7 @@
  * Requires at least: 5.0
  * Requires PHP:      7.4
  * Author:            glowleaf
- * Author URI:        https://glowleaf.com
+ * Author URI:        https://georgesaoulidis.com
  * License:           GPL v2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       no-more-comment-spam

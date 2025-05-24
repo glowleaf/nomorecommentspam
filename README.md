@@ -10,18 +10,21 @@ A WordPress plugin that prevents comment spam by requiring commenters to authent
 - **Self-Funding Anti-Spam**: Site owners earn from spam attempts, making spam attacks counterproductive
 - **Minimal User Friction**: Regular users only need to authenticate once to post multiple comments
 
-## Requirements
+## Dependencies
 
 - WordPress 5.0 or higher
-- PHP 7.4 or higher
-- [LNLogin Plugin](https://github.com/supertestnet/lnlogin) by Supertestnet (required for Lightning Network authentication)
+- PHP 7.4 or higher  
+- LNLogin functionality (bundled within this plugin)
+- Lightning Network wallet for testing payments
+- Nostr browser extension (for Nostr authentication)
 
 ## Installation
 
-1. Install and activate the [LNLogin Plugin](https://github.com/supertestnet/lnlogin) first
-2. Download this plugin and upload it to your WordPress plugins directory
-3. Activate the plugin through the WordPress admin interface
-4. Go to Settings > No More Comment Spam to configure authentication methods
+1. Download this plugin and upload it to your WordPress plugins directory
+2. Activate the plugin through the WordPress admin interface  
+3. Go to Settings > No More Comment Spam to configure authentication methods
+
+**Note**: The LNLogin functionality is bundled within this plugin - no separate installation required!
 
 ## Configuration
 
@@ -50,8 +53,9 @@ The plugin includes automatic spam protection:
 
 ## Credits
 
-- LNLogin Plugin by [Supertestnet](https://github.com/supertestnet/lnlogin) - Essential component for Lightning Network authentication
-- Plugin development by [Glowleaf](https://georgesaoulidis.com)
+- LNLogin functionality by [Supertestnet](https://github.com/supertestnet/lnlogin) - Bundled Lightning Network authentication component
+- Nostr protocol implementation using [nostr-tools](https://github.com/nbd-wtf/nostr-tools)
+- WordPress plugin development following [WordPress coding standards](https://developer.wordpress.org/coding-standards/)
 
 ## License
 

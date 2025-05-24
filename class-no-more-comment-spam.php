@@ -24,9 +24,13 @@ class No_More_Comment_Spam {
         error_log('NMCS: Constructor called');
         
         // Try to load LNLogin if not already active
-        if (!class_exists('LNLogin') && file_exists(dirname(__DIR__) . '/lnlogin-main/lnlogin.php')) {
-            require_once dirname(__DIR__) . '/lnlogin-main/lnlogin.php';
-            error_log('NMCS: Tried to load LNLogin');
+        if (!function_exists('generateLnurl') && file_exists(dirname(__FILE__) . '/lnlogin-main/lnlogin.php')) {
+            require_once dirname(__FILE__) . '/lnlogin-main/lnlogin.php';
+            error_log('NMCS: Loaded bundled LNLogin from plugin directory');
+        } elseif (function_exists('generateLnurl')) {
+            error_log('NMCS: LNLogin functions already available');
+        } else {
+            error_log('NMCS: Warning - LNLogin not found in bundled directory');
         }
 
         // Admin: settings page
